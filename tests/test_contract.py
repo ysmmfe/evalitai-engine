@@ -39,7 +39,10 @@ def test_compare_only_includes_shared_case_keys() -> None:
     assert result.comparisons == []
 
 
-def test_compare_with_stub_evaluator_reports_stable_verdicts() -> None:
+def test_compare_skips_metrics_with_no_applicable_ground_truth() -> None:
+    # The fixtures carry no ground_truth, so every deterministic metric is
+    # skipped on both sides — nothing shared to compare, but the case keys
+    # still line up.
     baseline = read_cases(FIXTURES / "baseline.jsonl")
     candidate = read_cases(FIXTURES / "candidate.jsonl")
 
@@ -47,6 +50,28 @@ def test_compare_with_stub_evaluator_reports_stable_verdicts() -> None:
 
     assert result.compared_case_count == 2
     for case_comparison in result.comparisons:
-        for metric_comparison in case_comparison.metrics:
-            assert metric_comparison.verdict == Verdict.STABLE
-            assert metric_comparison.delta == 0.0
+        assert case_comparison.metrics == []
+
+
+def test_compare_flags_regression_when_must_include_starts_failing() -> None:
+    baseline = [
+        EvaluationCase(
+            case_key="c1",
+            output="Please contact support@example.com for help.",
+            ground_truth={"must_include": ["support@example.com"]},
+        )
+    ]
+    candidate = [
+        EvaluationCase(
+            case_key="c1",
+            output="Sorry, I can't help with that.",
+            ground_truth={"must_include": ["support@example.com"]},
+        )
+    ]
+
+    result = compare(baseline, candidate)
+
+    metric = result.comparisons[0].metrics[0]
+    assert metric.metric == "must_include"
+    assert metric.verdict == Verdict.REGRESSION
+    assert metric.delta == -100.0

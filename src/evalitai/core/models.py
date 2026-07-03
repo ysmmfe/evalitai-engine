@@ -12,6 +12,7 @@ class EvaluationCase(BaseModel):
     input: dict[str, Any] | None = None
     context: dict[str, Any] | None = None
     ground_truth: dict[str, Any] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class Criteria(BaseModel):
@@ -30,12 +31,14 @@ class EvaluatorConfig(BaseModel):
     judge: str = "stub"
     temperature: float = 0.0
     seed: int | None = None
+    prohibited_terms: list[str] | None = None
+    max_latency_ms: float | None = None
 
 
 class MetricResult(BaseModel):
     name: str
-    score: float
-    confidence: float
+    score: float | None
+    confidence: float | None
     rationale: str
     evidence: list[str] = Field(default_factory=list)
     skipped: bool = False

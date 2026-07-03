@@ -11,23 +11,24 @@ from evalitai.core.models import (
     MetricResult,
     Verdict,
 )
+from evalitai.metrics.deterministic import DETERMINISTIC_METRICS
 
 # Placeholder threshold (score points, 0-100 scale). OE-06 replaces this with
 # the full rule: delta <= -threshold AND confidence >= floor AND !unstable.
 DEFAULT_REGRESSION_THRESHOLD = 5.0
 
 
-def _stub_evaluate_case(case: EvaluationCase) -> CaseEvaluation:
-    """Placeholder evaluator: no real metrics yet (those land in OE-03/04)."""
-    metric = MetricResult(
-        name="stub_quality",
-        score=100.0,
-        confidence=1.0,
-        rationale="Stub evaluator: OE-02 only fixes the contract shape, "
-        "real metrics land in OE-03 (deterministic) and OE-04 (judge).",
-        evidence=[],
-    )
-    return CaseEvaluation(case_key=case.case_key, metrics=[metric])
+def _evaluate_case(case: EvaluationCase, config: EvaluatorConfig) -> CaseEvaluation:
+    """Run every deterministic metric against one case.
+
+    LLM-judge metrics (OE-04) and compiled custom criteria (OE-05) are added
+    to this list once those issues land — they follow the same
+    ``(case, config) -> MetricResult`` shape.
+    """
+    metrics: list[MetricResult] = [
+        evaluator(case, config) for evaluator in DETERMINISTIC_METRICS
+    ]
+    return CaseEvaluation(case_key=case.case_key, metrics=metrics)
 
 
 def evaluate(
@@ -35,10 +36,11 @@ def evaluate(
     criteria: Criteria | None = None,
     config: EvaluatorConfig | None = None,
 ) -> EvaluationResult:
-    del criteria, config  # unused until OE-04/OE-05 wire in real evaluators
+    del criteria  # wired in once OE-05 (criteria compiler) lands
+    resolved_config = config or EvaluatorConfig()
     return EvaluationResult(
         engine_version=__version__,
-        cases=[_stub_evaluate_case(case) for case in candidate],
+        cases=[_evaluate_case(case, resolved_config) for case in candidate],
     )
 
 
@@ -65,14 +67,23 @@ def compare(
 
     comparisons: list[CaseComparison] = []
     for case_key in sorted(shared_keys):
-        baseline_metrics = {m.name: m for m in baseline_by_key[case_key].metrics}
-        candidate_metrics = {m.name: m for m in candidate_by_key[case_key].metrics}
+        baseline_metrics = {
+            m.name: m for m in baseline_by_key[case_key].metrics if not m.skipped
+        }
+        candidate_metrics = {
+            m.name: m for m in candidate_by_key[case_key].metrics if not m.skipped
+        }
         shared_metric_names = baseline_metrics.keys() & candidate_metrics.keys()
 
         metric_comparisons: list[MetricComparison] = []
         for metric_name in sorted(shared_metric_names):
             base_metric = baseline_metrics[metric_name]
             cand_metric = candidate_metrics[metric_name]
+            assert base_metric.score is not None and cand_metric.score is not None
+            assert (
+                base_metric.confidence is not None
+                and cand_metric.confidence is not None
+            )
             delta = cand_metric.score - base_metric.score
             metric_comparisons.append(
                 MetricComparison(
