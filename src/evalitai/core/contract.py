@@ -11,6 +11,7 @@ from evalitai.core.models import (
     MetricResult,
     Verdict,
 )
+from evalitai.judge import JUDGE_METRICS
 from evalitai.metrics.deterministic import DETERMINISTIC_METRICS
 
 # Placeholder threshold (score points, 0-100 scale). OE-06 replaces this with
@@ -19,14 +20,17 @@ DEFAULT_REGRESSION_THRESHOLD = 5.0
 
 
 def _evaluate_case(case: EvaluationCase, config: EvaluatorConfig) -> CaseEvaluation:
-    """Run every deterministic metric against one case.
+    """Run every deterministic and LLM-judge metric against one case.
 
-    LLM-judge metrics (OE-04) and compiled custom criteria (OE-05) are added
-    to this list once those issues land — they follow the same
-    ``(case, config) -> MetricResult`` shape.
+    Judge metrics are skipped when ``config.judge == "stub"`` (the default),
+    so evaluation stays fully offline unless a real judge model is
+    configured. Compiled custom criteria (OE-05) are added to this list once
+    that issue lands — it follows the same ``(case, config) -> MetricResult``
+    shape.
     """
     metrics: list[MetricResult] = [
-        evaluator(case, config) for evaluator in DETERMINISTIC_METRICS
+        evaluator(case, config)
+        for evaluator in (*DETERMINISTIC_METRICS, *JUDGE_METRICS)
     ]
     return CaseEvaluation(case_key=case.case_key, metrics=metrics)
 
