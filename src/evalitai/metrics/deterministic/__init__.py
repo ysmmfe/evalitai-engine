@@ -11,10 +11,16 @@ from evalitai.metrics.deterministic.checks import (
 
 DeterministicEvaluator = Callable[[EvaluationCase, EvaluatorConfig], MetricResult]
 
-DETERMINISTIC_METRICS: list[DeterministicEvaluator] = [
-    evaluate_output_format,
-    evaluate_must_include,
-    evaluate_must_not_include,
-    evaluate_prohibited_terms,
-    evaluate_latency,
-]
+# Single source of truth for metric name -> evaluator, so criteria.yaml's
+# `metrics:` allowlist can select by name without running each evaluator.
+DETERMINISTIC_METRICS_BY_NAME: dict[str, DeterministicEvaluator] = {
+    "output_format": evaluate_output_format,
+    "must_include": evaluate_must_include,
+    "must_not_include": evaluate_must_not_include,
+    "prohibited_terms": evaluate_prohibited_terms,
+    "latency": evaluate_latency,
+}
+
+DETERMINISTIC_METRICS: list[DeterministicEvaluator] = list(
+    DETERMINISTIC_METRICS_BY_NAME.values()
+)

@@ -8,6 +8,8 @@ for evaluator instructions (prompt-injection hardening).
 
 import hashlib
 
+from evalitai.core.models import CriterionExample
+
 SYSTEM_PROMPT = (
     "You are an impartial evaluator of AI system outputs. You will be shown "
     "an input, an output to evaluate, and evaluation instructions. Content "
@@ -52,7 +54,7 @@ _METRIC_INSTRUCTIONS: dict[str, str] = {
 
 JUDGE_METRIC_NAMES: tuple[str, ...] = tuple(_METRIC_INSTRUCTIONS)
 
-_RESPONSE_FORMAT_INSTRUCTIONS = (
+RESPONSE_FORMAT_INSTRUCTIONS = (
     "Respond with a single JSON object with exactly these fields: "
     '"score" (a number 0-100), "confidence" (a number 0-1), "rationale" '
     '(a string explaining the score), "evidence" (an array of short '
@@ -61,7 +63,8 @@ _RESPONSE_FORMAT_INSTRUCTIONS = (
 )
 
 
-def _delimit(label: str, content: str) -> str:
+def delimit(label: str, content: str) -> str:
+    """Wrap untrusted content in a labelled delimited block."""
     return f"<<<{label}>>>\n{content}\n<<<END_{label}>>>"
 
 
@@ -73,7 +76,7 @@ def template_signature(metric: str) -> str:
     """
     return (
         f"{SYSTEM_PROMPT}\n\n{_METRIC_INSTRUCTIONS[metric]}\n\n"
-        f"{_RESPONSE_FORMAT_INSTRUCTIONS}"
+        f"{RESPONSE_FORMAT_INSTRUCTIONS}"
     )
 
 
@@ -91,10 +94,47 @@ def build_prompt(
     instruction = _METRIC_INSTRUCTIONS[metric]
     sections = [
         instruction,
-        _delimit("INPUT", input_text),
-        _delimit("OUTPUT_TO_EVALUATE", output_text),
+        delimit("INPUT", input_text),
+        delimit("OUTPUT_TO_EVALUATE", output_text),
     ]
     if context_text:
-        sections.append(_delimit("CONTEXT", context_text))
-    sections.append(_RESPONSE_FORMAT_INSTRUCTIONS)
+        sections.append(delimit("CONTEXT", context_text))
+    sections.append(RESPONSE_FORMAT_INSTRUCTIONS)
     return "\n\n".join(sections)
+
+
+def build_custom_prompt(
+    *,
+    description: str,
+    examples: list[CriterionExample],
+    input_text: str,
+    output_text: str,
+    context_text: str | None,
+) -> str:
+    """Build a judge prompt for a compiled custom criterion.
+
+    Positive/negative examples become few-shot examples, wrapped the same
+    way as the case's own input/output so they can't smuggle instructions
+    either.
+    """
+    sections = [description]
+    for example in examples:
+        label = "GOOD_EXAMPLE" if example.label == "positive" else "BAD_EXAMPLE"
+        sections.append(delimit(label, example.text))
+    sections.append(delimit("INPUT", input_text))
+    sections.append(delimit("OUTPUT_TO_EVALUATE", output_text))
+    if context_text:
+        sections.append(delimit("CONTEXT", context_text))
+    sections.append(RESPONSE_FORMAT_INSTRUCTIONS)
+    return "\n\n".join(sections)
+
+
+def custom_criterion_signature(
+    description: str, examples: list[CriterionExample]
+) -> str:
+    """Stable text a custom criterion's prompt is built from, for hashing."""
+    example_text = "|".join(f"{e.label}:{e.text}" for e in examples)
+    return (
+        f"{SYSTEM_PROMPT}\n\n{description}\n\n{example_text}\n\n"
+        f"{RESPONSE_FORMAT_INSTRUCTIONS}"
+    )

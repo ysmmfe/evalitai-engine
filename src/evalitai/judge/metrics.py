@@ -16,9 +16,14 @@ from evalitai.judge.prompts import (
     prompt_hash,
     template_signature,
 )
-from evalitai.judge.provider import call_judge
+from evalitai.judge.provider import JudgeResponse, call_judge
 
 REQUIRED_FIELDS = ("score", "confidence", "rationale")
+
+STUB_SKIP_REASON = (
+    "stub judge configured — set EvaluatorConfig.judge to a model id "
+    "(e.g. 'ollama/llama3') to enable LLM-judge metrics"
+)
 
 
 def _stringify(value: object) -> str:
@@ -33,15 +38,42 @@ def _skipped(name: str, reason: str) -> MetricResult:
     )
 
 
+def parse_judge_response(name: str, response: JudgeResponse) -> MetricResult:
+    """Parse a raw judge response into a MetricResult, skipping on any
+    missing required field rather than raising.
+
+    Shared by both the fixed judge metrics and the compiled custom
+    criteria evaluator (``judge.criteria``) — same response shape either
+    way.
+    """
+    try:
+        payload = json.loads(response.raw_content)
+    except json.JSONDecodeError:
+        return _skipped(name, "judge response was not valid JSON")
+
+    missing = [field for field in REQUIRED_FIELDS if field not in payload]
+    if missing:
+        return _skipped(name, f"judge response missing required fields: {missing}")
+
+    evidence = [str(item) for item in (payload.get("evidence") or [])]
+    evidence.append(f"latency_ms={response.latency_ms:.1f}")
+    if response.cost_usd is not None:
+        evidence.append(f"cost_usd={response.cost_usd}")
+
+    return MetricResult(
+        name=name,
+        score=float(payload["score"]),
+        confidence=float(payload["confidence"]),
+        rationale=str(payload["rationale"]),
+        evidence=evidence,
+    )
+
+
 def _evaluate_judge_metric(
     metric: str, case: EvaluationCase, config: EvaluatorConfig
 ) -> MetricResult:
     if config.judge == "stub":
-        return _skipped(
-            metric,
-            "stub judge configured — set EvaluatorConfig.judge to a model id "
-            "(e.g. 'ollama/llama3') to enable LLM-judge metrics",
-        )
+        return _skipped(metric, STUB_SKIP_REASON)
 
     prompt = build_prompt(
         metric,
@@ -50,31 +82,12 @@ def _evaluate_judge_metric(
         context_text=_stringify(case.context) or None,
     )
     response = call_judge(prompt, config)
+    result = parse_judge_response(metric, response)
+    if result.skipped:
+        return result
 
-    try:
-        payload = json.loads(response.raw_content)
-    except json.JSONDecodeError:
-        return _skipped(metric, "judge response was not valid JSON")
-
-    missing = [field for field in REQUIRED_FIELDS if field not in payload]
-    if missing:
-        return _skipped(
-            metric, f"judge response missing required fields: {missing}"
-        )
-
-    evidence = [str(item) for item in (payload.get("evidence") or [])]
-    evidence.append(f"prompt_version={prompt_hash(template_signature(metric))}")
-    evidence.append(f"latency_ms={response.latency_ms:.1f}")
-    if response.cost_usd is not None:
-        evidence.append(f"cost_usd={response.cost_usd}")
-
-    return MetricResult(
-        name=metric,
-        score=float(payload["score"]),
-        confidence=float(payload["confidence"]),
-        rationale=str(payload["rationale"]),
-        evidence=evidence,
-    )
+    version_note = f"prompt_version={prompt_hash(template_signature(metric))}"
+    return result.model_copy(update={"evidence": [*result.evidence, version_note]})
 
 
 def _make_judge_evaluator(

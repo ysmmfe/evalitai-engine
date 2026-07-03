@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -15,16 +15,37 @@ class EvaluationCase(BaseModel):
     metadata: dict[str, Any] | None = None
 
 
+class CriterionExample(BaseModel):
+    """A positive or negative few-shot example for a custom criterion."""
+
+    text: str
+    label: Literal["positive", "negative"]
+
+
+class CriterionSpec(BaseModel):
+    """A single structured entry in ``criteria.yaml``'s ``criteria`` list.
+
+    ``name`` is optional on input — the criteria compiler (OE-05) assigns
+    one from ``description`` when omitted, so ``criteria.yaml`` authors can
+    skip it for simple cases.
+    """
+
+    name: str = ""
+    description: str
+    examples: list[CriterionExample] = Field(default_factory=list)
+
+
 class Criteria(BaseModel):
     """Parsed contents of an (optional) criteria.yaml file.
 
-    This is the raw, uncompiled form. Turning ``criteria`` free-text entries
-    into a judge rubric is the criteria compiler's job (OE-05), not this
-    contract's.
+    This is the raw, uncompiled form: ``criteria`` entries may be plain
+    strings or structured ``CriterionSpec`` objects. Turning them into a
+    judge rubric (assigning stable names, resolving effective metrics) is
+    the criteria compiler's job (OE-05), not this contract's.
     """
 
     metrics: list[str] | None = None
-    criteria: list[str] | None = None
+    criteria: list[str | CriterionSpec] | None = None
 
 
 class EvaluatorConfig(BaseModel):

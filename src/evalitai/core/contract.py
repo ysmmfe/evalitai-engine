@@ -4,6 +4,7 @@ from evalitai.core.models import (
     CaseEvaluation,
     ComparisonResult,
     Criteria,
+    CriterionSpec,
     EvaluationCase,
     EvaluationResult,
     EvaluatorConfig,
@@ -11,26 +12,33 @@ from evalitai.core.models import (
     MetricResult,
     Verdict,
 )
-from evalitai.judge import JUDGE_METRICS
-from evalitai.metrics.deterministic import DETERMINISTIC_METRICS
+from evalitai.judge.criteria import compile_criteria, evaluate_custom_criterion
+from evalitai.metrics.registry import Evaluator, resolve_effective_metrics
 
 # Placeholder threshold (score points, 0-100 scale). OE-06 replaces this with
 # the full rule: delta <= -threshold AND confidence >= floor AND !unstable.
 DEFAULT_REGRESSION_THRESHOLD = 5.0
 
 
-def _evaluate_case(case: EvaluationCase, config: EvaluatorConfig) -> CaseEvaluation:
-    """Run every deterministic and LLM-judge metric against one case.
+def _evaluate_case(
+    case: EvaluationCase,
+    config: EvaluatorConfig,
+    effective_metrics: list[Evaluator],
+    custom_criteria: list[CriterionSpec],
+) -> CaseEvaluation:
+    """Run every effective built-in metric plus every compiled custom
+    criterion against one case.
 
-    Judge metrics are skipped when ``config.judge == "stub"`` (the default),
-    so evaluation stays fully offline unless a real judge model is
-    configured. Compiled custom criteria (OE-05) are added to this list once
-    that issue lands — it follows the same ``(case, config) -> MetricResult``
-    shape.
+    Judge-backed metrics (built-in or custom) are skipped when
+    ``config.judge == "stub"`` (the default), so evaluation stays fully
+    offline unless a real judge model is configured.
     """
     metrics: list[MetricResult] = [
-        evaluator(case, config)
-        for evaluator in (*DETERMINISTIC_METRICS, *JUDGE_METRICS)
+        evaluator(case, config) for evaluator in effective_metrics
+    ]
+    metrics += [
+        evaluate_custom_criterion(criterion, case, config)
+        for criterion in custom_criteria
     ]
     return CaseEvaluation(case_key=case.case_key, metrics=metrics)
 
@@ -40,11 +48,15 @@ def evaluate(
     criteria: Criteria | None = None,
     config: EvaluatorConfig | None = None,
 ) -> EvaluationResult:
-    del criteria  # wired in once OE-05 (criteria compiler) lands
     resolved_config = config or EvaluatorConfig()
+    effective_metrics = resolve_effective_metrics(criteria)
+    custom_criteria = compile_criteria(criteria)
     return EvaluationResult(
         engine_version=__version__,
-        cases=[_evaluate_case(case, resolved_config) for case in candidate],
+        cases=[
+            _evaluate_case(case, resolved_config, effective_metrics, custom_criteria)
+            for case in candidate
+        ],
     )
 
 
