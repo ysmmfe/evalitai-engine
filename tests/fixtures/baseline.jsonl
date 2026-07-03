@@ -1,0 +1,2 @@
+{"case_key": "reset-password", "input": {"question": "How do I reset my password?"}, "output": "Click forgot password and check your email."}
+{"case_key": "refund-policy", "input": {"question": "What is your refund policy?"}, "output": "Refunds within 30 days of purchase."}
