@@ -7,6 +7,25 @@ on:
   workflow_call:
 
 jobs:
+  dco:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check all commits are signed off (DCO)
+        run: |
+          missing=0
+          for sha in $(git log --format=%H "origin/${{ github.base_ref }}..HEAD"); do
+            if ! git log -1 --format=%B "$sha" | grep -qi "^Signed-off-by:"; then
+              echo "::error::Commit $sha is missing a 'Signed-off-by' trailer. Run 'git commit --amend -s' (or rebase with -s) and force-push."
+              missing=1
+            fi
+          done
+          exit $missing
+
   test:
     runs-on: ubuntu-latest
     steps:

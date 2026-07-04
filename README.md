@@ -1,5 +1,9 @@
 # evalitai-engine
 
+[![CI](https://github.com/ysmmfe/evalitai-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/ysmmfe/evalitai-engine/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/evalitai-engine.svg)](https://pypi.org/project/evalitai-engine/)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+
 Open-source evaluation engine for LLM-based systems. Compares `candidate`
 output against a `baseline`, using an LLM judge (your choice of model) plus
 optional natural-language `criteria`, and reports what regressed, improved,
