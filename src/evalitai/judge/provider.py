@@ -1,7 +1,7 @@
 """LLM provider abstraction for judge calls, via LiteLLM.
 
 LiteLLM lets ``EvaluatorConfig.judge`` name a local model (e.g.
-``ollama/llama3``, ``vllm/...``) or a hosted one (e.g. ``gpt-4o-mini``) using
+``ollama/llama3``, ``vllm/...``) or a hosted one (e.g. ``gpt-5-mini``) using
 a user-supplied API key from the environment — the caller is agnostic to
 which.
 """

@@ -46,5 +46,5 @@ evalitai compare \
 To see the LLM-judge metrics (`overall_quality`, `hallucination`, etc.) and
 the custom criterion actually run instead of being skipped, point `--judge`
 at a real model, e.g. `--judge ollama/llama3` (local, needs
-[Ollama](https://ollama.com) running) or `--judge gpt-4o-mini` (needs
+[Ollama](https://ollama.com) running) or `--judge gpt-5-mini` (needs
 `OPENAI_API_KEY` set).

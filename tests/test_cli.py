@@ -126,7 +126,7 @@ def test_init_scaffolds_all_files_in_cwd(tmp_path: Path, monkeypatch) -> None:
     assert (tmp_path / "candidate.jsonl").exists()
     assert (tmp_path / "criteria.yaml").exists()
     assert (tmp_path / ".env").exists()
-    assert "judge: gpt-4o-mini" in (tmp_path / "criteria.yaml").read_text()
+    assert "judge: gpt-5-mini" in (tmp_path / "criteria.yaml").read_text()
 
 
 def test_init_does_not_overwrite_existing_files(tmp_path: Path, monkeypatch) -> None:

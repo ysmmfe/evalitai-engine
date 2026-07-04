@@ -33,8 +33,8 @@ the scaffolded `criteria.yaml`'s `judge:` field (see
 [criteria.md](./criteria.md)) — set it once, reused across every run;
 `--judge` on the command line overrides it for a single run.
 
-- **Hosted**: use a LiteLLM model string (e.g. `gpt-4o-mini`,
-  `claude-haiku-4-5`, `gemini-2.5-flash`) and set the provider's API key.
+- **Hosted**: use a LiteLLM model string (e.g. `gpt-5-mini`,
+  `claude-haiku-4-5`, `gemini-3-flash`) and set the provider's API key.
 - **Local, no API key**: run [Ollama](https://ollama.com) and use
   `ollama/llama3` (or any model you've pulled).
 

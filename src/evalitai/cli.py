@@ -45,9 +45,9 @@ _SCAFFOLD_CANDIDATE = (
 )
 _SCAFFOLD_CRITERIA = (
     "# The model that judges your outputs. Any LiteLLM-supported model\n"
-    "# string works: \"gpt-4o-mini\", \"claude-haiku-4-5\", \"ollama/llama3\"\n"
+    "# string works: \"gpt-5-mini\", \"claude-haiku-4-5\", \"ollama/llama3\"\n"
     "# (local, no API key), etc. See docs/installation.md.\n"
-    "judge: gpt-4o-mini\n"
+    "judge: gpt-5-mini\n"
 )
 _SCAFFOLD_ENV = (
     "# Only set the key for the provider you picked as `judge` above.\n"
@@ -136,7 +136,7 @@ def compare(
     ),
     judge: str | None = typer.Option(
         None,
-        help="Judge provider identifier (e.g. 'gpt-4o-mini', 'ollama/llama3'). "
+        help="Judge provider identifier (e.g. 'gpt-5-mini', 'ollama/llama3'). "
         "Overrides criteria.yaml's judge field, if any; defaults to 'stub' "
         "(offline, no LLM calls) when neither is set.",
     ),

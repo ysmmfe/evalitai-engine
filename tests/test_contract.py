@@ -141,7 +141,7 @@ def test_compare_warns_on_mismatched_judge_versions() -> None:
         candidate,
         criteria=Criteria(metrics=[]),
         config=EvaluatorConfig(judge="stub"),
-        baseline_config=EvaluatorConfig(judge="gpt-4"),
+        baseline_config=EvaluatorConfig(judge="gpt-5"),
     )
 
     assert any("judge" in warning for warning in result.warnings)

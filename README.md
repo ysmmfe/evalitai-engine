@@ -29,7 +29,7 @@ in place, nothing to write from scratch:
 | File               | What to fill in                                                                 |
 | ------------------ | ---------------------------------------------------------------------------------- |
 | `.env`             | The API key for whichever provider you pick below (only that one line).            |
-| `criteria.yaml`    | Its `judge:` field — any model string [LiteLLM](https://docs.litellm.ai/docs/providers) supports: hosted (`gpt-4o-mini`, `claude-haiku-4-5`, `gemini-2.5-flash`, ...) or local via [Ollama](https://ollama.com) (`ollama/llama3`, no API key needed). |
+| `criteria.yaml`    | Its `judge:` field — any model string [LiteLLM](https://docs.litellm.ai/docs/providers) supports: hosted (`gpt-5-mini`, `claude-haiku-4-5`, `gemini-3-flash`, ...) or local via [Ollama](https://ollama.com) (`ollama/llama3`, no API key needed). |
 | `baseline.jsonl`   | Replace the sample case(s) with your system's known-good outputs.                  |
 | `candidate.jsonl`  | Same `case_key`s, with the new outputs you want to check for regressions.          |
 
