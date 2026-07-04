@@ -1,0 +1,65 @@
+{
+  "engine_version": "0.1.0",
+  "baseline_case_count": 4,
+  "candidate_case_count": 4,
+  "compared_case_count": 4,
+  "comparisons": [
+    {
+      "case_key": "greeting",
+      "metrics": [
+        {
+          "metric": "must_include",
+          "baseline_score": 100.0,
+          "candidate_score": 100.0,
+          "delta": 0.0,
+          "confidence": 1.0,
+          "verdict": "stable",
+          "severity": null
+        }
+      ]
+    },
+    {
+      "case_key": "order-status-json",
+      "metrics": [
+        {
+          "metric": "output_format",
+          "baseline_score": 100.0,
+          "candidate_score": 0.0,
+          "delta": -100.0,
+          "confidence": 1.0,
+          "verdict": "regression",
+          "severity": "critical"
+        }
+      ]
+    },
+    {
+      "case_key": "refund-policy",
+      "metrics": [
+        {
+          "metric": "must_not_include",
+          "baseline_score": 100.0,
+          "candidate_score": 0.0,
+          "delta": -100.0,
+          "confidence": 1.0,
+          "verdict": "regression",
+          "severity": "critical"
+        }
+      ]
+    },
+    {
+      "case_key": "reset-password",
+      "metrics": [
+        {
+          "metric": "must_include",
+          "baseline_score": 100.0,
+          "candidate_score": 0.0,
+          "delta": -100.0,
+          "confidence": 1.0,
+          "verdict": "regression",
+          "severity": "critical"
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

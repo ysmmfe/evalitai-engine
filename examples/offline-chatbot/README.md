@@ -33,6 +33,10 @@ three `"verdict": "regression"` entries, all `"severity": "critical"`:
 | `order-status-json` | `output_format`  | candidate replied in prose instead of JSON            |
 | `greeting`          | `must_include`   | unchanged — stays `stable`                            |
 
+The full output of this exact run is checked in at
+[`comparison.json`](comparison.json) for reference (regenerate it by adding
+`--output examples/offline-chatbot/comparison.json` to the command above).
+
 To also apply the metric allowlist from `criteria.yaml`:
 
 ```bash
