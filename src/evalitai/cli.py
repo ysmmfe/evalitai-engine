@@ -212,7 +212,9 @@ def evaluate(
     criteria_obj = read_criteria(_resolve_criteria(criteria))
     config = EvaluatorConfig(judge=_resolve_judge(judge, criteria_obj))
     try:
-        result = contract.evaluate(candidate_cases, criteria=criteria_obj, config=config)
+        result = contract.evaluate(
+            candidate_cases, criteria=criteria_obj, config=config
+        )
     except JudgeCallError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=1) from exc
