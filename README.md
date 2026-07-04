@@ -1,7 +1,7 @@
 # evalitai-engine
 
 [![CI](https://github.com/ysmmfe/evalitai-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/ysmmfe/evalitai-engine/actions/workflows/ci.yml)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](./pyproject.toml)
+[![PyPI](https://img.shields.io/pypi/v/evalitai-engine.svg)](https://pypi.org/project/evalitai-engine/)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 
 Open-source evaluation engine for LLM-based systems. Compares `candidate`
