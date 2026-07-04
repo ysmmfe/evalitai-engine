@@ -1,0 +1,10 @@
+# Optional: restrict which built-in metrics run, and add a custom
+# free-text criterion. Custom criteria require a real judge (they are
+# skipped when --judge stub, the offline default) — see docs/criteria.md.
+metrics:
+  - must_include
+  - must_not_include
+  - output_format
+
+criteria:
+  - "The response should be friendly and never blame the customer."

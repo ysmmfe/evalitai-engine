@@ -1,0 +1,4 @@
+{"case_key": "reset-password", "input": {"question": "How do I reset my password?"}, "output": "Go to your account settings and reset it there.", "ground_truth": {"must_include": ["email"]}}
+{"case_key": "refund-policy", "input": {"question": "What is your refund policy?"}, "output": "Sorry, no refunds are offered on any purchase.", "ground_truth": {"must_not_include": ["no refunds"]}}
+{"case_key": "order-status-json", "input": {"question": "Give me the order status as JSON."}, "output": "Your order has shipped and should arrive in 3 days.", "ground_truth": {"output_format": "json"}}
+{"case_key": "greeting", "input": {"question": "Hi there"}, "output": "Hello! How can I help you today?", "ground_truth": {"must_include": ["help"]}}

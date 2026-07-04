@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 jobs:
   test:
@@ -25,8 +26,11 @@ jobs:
       - name: Type check (mypy)
         run: uv run mypy src
 
-      - name: Test (pytest)
-        run: uv run pytest -v
+      - name: Test (pytest, coverage >= 80%)
+        run: uv run pytest -v --cov=src --cov-report=term-missing --cov-fail-under=80
+
+      - name: Run offline example smoke test
+        run: uv run evalitai compare --baseline examples/offline-chatbot/baseline.jsonl --candidate examples/offline-chatbot/candidate.jsonl --judge stub --output /tmp/comparison.json
 
       - name: Build package
         run: uv build
