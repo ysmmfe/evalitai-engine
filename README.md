@@ -1,7 +1,7 @@
 # evalitai-engine
 
 [![CI](https://github.com/ysmmfe/evalitai-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/ysmmfe/evalitai-engine/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/evalitai-engine.svg)](https://pypi.org/project/evalitai-engine/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](./pyproject.toml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 
 Open-source evaluation engine for LLM-based systems. Compares `candidate`
@@ -97,11 +97,6 @@ Full documentation is in [`docs/`](./docs/README.md) (installation, CLI
 reference, the compare/evaluate contract, JSONL format, criteria YAML
 syntax, metrics reference). A runnable, fully offline walkthrough is in
 [`examples/offline-chatbot/`](./examples/offline-chatbot/README.md).
-
-## Status
-
-Early alpha. The public contract (`compare()` / `evaluate()`) is not yet
-frozen — see the issue tracker for progress.
 
 ## License
 
