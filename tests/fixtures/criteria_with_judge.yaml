@@ -1,0 +1,3 @@
+judge: fake-model-from-criteria
+metrics:
+  - must_include

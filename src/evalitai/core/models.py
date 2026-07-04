@@ -1,3 +1,5 @@
+
+
 from enum import StrEnum
 from typing import Any, Literal
 
@@ -44,6 +46,7 @@ class Criteria(BaseModel):
     the criteria compiler's job (OE-05), not this contract's.
     """
 
+    judge: str | None = None
     metrics: list[str] | None = None
     criteria: list[str | CriterionSpec] | None = None
 

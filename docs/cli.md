@@ -1,24 +1,35 @@
 # CLI usage
 
+## `evalitai init`
+
+Scaffolds `baseline.jsonl`, `candidate.jsonl`, `criteria.yaml`, and `.env`
+in the current directory, pre-filled with a runnable example. Never
+overwrites a file that already exists — reruns are safe, and it tells you
+which files it skipped. Edit the scaffolded files in place, then run
+`compare`/`evaluate` with no flags at all.
+
 ## `evalitai compare`
 
 Compares `candidate` against `baseline` case by case and metric by metric.
 
 ```bash
-evalitai compare \
-  --baseline baseline.jsonl \
-  --candidate candidate.jsonl \
-  --judge stub \
-  --criteria criteria.yaml \
-  --output comparison.json
+evalitai compare
+```
+
+Reads `baseline.jsonl`, `candidate.jsonl`, and `criteria.yaml` (if present)
+from the current directory by convention — no flags needed once you've run
+`evalitai init` and filled them in. Pass a flag to override any of them:
+
+```bash
+evalitai compare --baseline other-baseline.jsonl --output comparison.json
 ```
 
 | Option              | Default | Meaning                                                                 |
 | -------------------- | ------- | ------------------------------------------------------------------------ |
-| `--baseline`         | required | Path to the baseline JSONL file.                                        |
-| `--candidate`        | required | Path to the candidate JSONL file.                                       |
-| `--criteria`         | none     | Optional `criteria.yaml` — see [criteria.md](./criteria.md).             |
-| `--judge`            | `stub`   | Judge provider identifier passed through to LiteLLM (see [installation](./installation.md)). |
+| `--baseline`         | `./baseline.jsonl` | Path to the baseline JSONL file.                              |
+| `--candidate`        | `./candidate.jsonl` | Path to the candidate JSONL file.                            |
+| `--criteria`         | `./criteria.yaml` if it exists, else none | See [criteria.md](./criteria.md).      |
+| `--judge`            | none     | Judge provider identifier passed through to LiteLLM (see [installation](./installation.md)). Overrides `criteria.yaml`'s `judge:` field if both are set; falls back to `stub` (offline, no LLM calls) if neither is set. |
 | `--baseline-judge`   | none     | Use a different judge for the baseline run than for the candidate; a mismatch is surfaced as a `warnings` entry. |
 | `--threshold`        | `5.0`    | Minimum absolute score delta (0-100 scale) to classify a regression/improvement instead of `stable`. |
 | `--confidence-floor` | `0.5`    | Minimum judge confidence required to trust a verdict.                    |
@@ -33,17 +44,14 @@ Runs metrics against `candidate` cases without a baseline — useful for a
 one-off quality check or a pass/fail gate.
 
 ```bash
-evalitai evaluate \
-  --candidate candidate.jsonl \
-  --judge stub \
-  --output result.json
+evalitai evaluate
 ```
 
 | Option        | Default | Meaning                                             |
 | ------------- | ------- | ---------------------------------------------------- |
-| `--candidate` | required | Path to the candidate JSONL file.                  |
-| `--criteria`  | none     | Optional `criteria.yaml`.                          |
-| `--judge`     | `stub`   | Judge provider identifier.                          |
+| `--candidate` | `./candidate.jsonl` | Path to the candidate JSONL file.            |
+| `--criteria`  | `./criteria.yaml` if it exists, else none | Optional `criteria.yaml`. |
+| `--judge`     | none     | Judge provider identifier. Same precedence as `compare`'s `--judge` (flag > `criteria.yaml` > `stub`). |
 | `--output`    | none     | Write the `EvaluationResult` JSON here instead of stdout. |
 
 ## `evalitai version`
