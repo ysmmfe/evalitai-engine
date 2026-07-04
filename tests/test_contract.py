@@ -1,7 +1,13 @@
 from pathlib import Path
 
 from evalitai.core.contract import compare, evaluate
-from evalitai.core.models import EvaluationCase, Verdict
+from evalitai.core.models import (
+    Criteria,
+    EvaluationCase,
+    EvaluatorConfig,
+    Severity,
+    Verdict,
+)
 from evalitai.io.jsonl import read_cases, read_criteria
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -75,3 +81,67 @@ def test_compare_flags_regression_when_must_include_starts_failing() -> None:
     assert metric.metric == "must_include"
     assert metric.verdict == Verdict.REGRESSION
     assert metric.delta == -100.0
+    assert metric.severity == Severity.CRITICAL
+
+
+def test_compare_reports_stable_below_threshold() -> None:
+    baseline = [
+        EvaluationCase(
+            case_key="c1",
+            output="Please contact support@example.com now.",
+            ground_truth={"must_include": ["support@example.com"]},
+        )
+    ]
+    candidate = [
+        EvaluationCase(
+            case_key="c1",
+            output="Please contact support@example.com later.",
+            ground_truth={"must_include": ["support@example.com"]},
+        )
+    ]
+
+    result = compare(baseline, candidate)
+
+    metric = result.comparisons[0].metrics[0]
+    assert metric.delta == 0.0
+    assert metric.verdict == Verdict.STABLE
+    assert metric.severity is None
+
+
+def test_compare_treats_low_confidence_metric_as_stable() -> None:
+    baseline = [
+        EvaluationCase(
+            case_key="c1",
+            output="Sorry, I can't help.",
+            ground_truth={"must_include": ["support@example.com"]},
+        )
+    ]
+    candidate = [
+        EvaluationCase(
+            case_key="c1",
+            output="Please contact support@example.com for help.",
+            ground_truth={"must_include": ["support@example.com"]},
+        )
+    ]
+    config = EvaluatorConfig(confidence_floor=1.5)  # unreachable floor
+
+    result = compare(baseline, candidate, config=config)
+
+    metric = result.comparisons[0].metrics[0]
+    assert metric.delta == 100.0
+    assert metric.verdict == Verdict.STABLE
+
+
+def test_compare_warns_on_mismatched_judge_versions() -> None:
+    baseline = [EvaluationCase(case_key="c1", output="a")]
+    candidate = [EvaluationCase(case_key="c1", output="b")]
+
+    result = compare(
+        baseline,
+        candidate,
+        criteria=Criteria(metrics=[]),
+        config=EvaluatorConfig(judge="stub"),
+        baseline_config=EvaluatorConfig(judge="gpt-4"),
+    )
+
+    assert any("judge" in warning for warning in result.warnings)

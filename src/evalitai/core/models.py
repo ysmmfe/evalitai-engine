@@ -54,6 +54,8 @@ class EvaluatorConfig(BaseModel):
     seed: int | None = None
     prohibited_terms: list[str] | None = None
     max_latency_ms: float | None = None
+    regression_threshold: float = 5.0
+    confidence_floor: float = 0.5
 
 
 class MetricResult(BaseModel):
@@ -63,6 +65,7 @@ class MetricResult(BaseModel):
     rationale: str
     evidence: list[str] = Field(default_factory=list)
     skipped: bool = False
+    unstable: bool = False
 
 
 class CaseEvaluation(BaseModel):
@@ -72,6 +75,7 @@ class CaseEvaluation(BaseModel):
 
 class EvaluationResult(BaseModel):
     engine_version: str
+    judge: str
     cases: list[CaseEvaluation]
 
 
@@ -81,6 +85,13 @@ class Verdict(StrEnum):
     STABLE = "stable"
 
 
+class Severity(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
 class MetricComparison(BaseModel):
     metric: str
     baseline_score: float
@@ -88,6 +99,7 @@ class MetricComparison(BaseModel):
     delta: float
     confidence: float
     verdict: Verdict
+    severity: Severity | None = None
 
 
 class CaseComparison(BaseModel):
@@ -101,3 +113,4 @@ class ComparisonResult(BaseModel):
     candidate_case_count: int
     compared_case_count: int
     comparisons: list[CaseComparison]
+    warnings: list[str] = Field(default_factory=list)

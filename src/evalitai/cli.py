@@ -45,6 +45,17 @@ def compare(
         None, exists=True, dir_okay=False, help="Optional criteria.yaml file."
     ),
     judge: str = typer.Option("stub", help="Judge provider identifier."),
+    baseline_judge: str | None = typer.Option(
+        None,
+        help="Judge provider identifier for the baseline, if different from "
+        "--judge (surfaces as a warning in the comparison).",
+    ),
+    threshold: float = typer.Option(
+        5.0, help="Minimum |delta| (score points) to classify a regression/improvement."
+    ),
+    confidence_floor: float = typer.Option(
+        0.5, help="Minimum confidence required to trust a verdict."
+    ),
     output: Path | None = typer.Option(
         None, help="Write comparison.json here instead of printing to stdout."
     ),
@@ -53,9 +64,20 @@ def compare(
     baseline_cases = read_cases(baseline)
     candidate_cases = read_cases(candidate)
     criteria_obj = read_criteria(criteria)
-    config = EvaluatorConfig(judge=judge)
+    config = EvaluatorConfig(
+        judge=judge, regression_threshold=threshold, confidence_floor=confidence_floor
+    )
+    baseline_config = (
+        config.model_copy(update={"judge": baseline_judge})
+        if baseline_judge is not None
+        else None
+    )
     result = contract.compare(
-        baseline_cases, candidate_cases, criteria=criteria_obj, config=config
+        baseline_cases,
+        candidate_cases,
+        criteria=criteria_obj,
+        config=config,
+        baseline_config=baseline_config,
     )
     _emit(result, output)
 
