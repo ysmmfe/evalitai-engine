@@ -21,7 +21,7 @@ from evalitai.judge.provider import JudgeResponse, call_judge
 REQUIRED_FIELDS = ("score", "confidence", "rationale")
 
 STUB_SKIP_REASON = (
-    "stub judge configured — set EvaluatorConfig.judge to a model id "
+    "stub judge configured - set EvaluatorConfig.judge to a model id "
     "(e.g. 'ollama/llama3') to enable LLM-judge metrics"
 )
 

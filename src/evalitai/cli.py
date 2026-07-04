@@ -12,11 +12,13 @@ from evalitai.core.models import (
     EvaluatorConfig,
 )
 from evalitai.io.jsonl import read_cases, read_criteria, write_json
+from evalitai.judge.provider import JudgeCallError
 
 app = typer.Typer(
     name="evalitai",
     help="Evalitai engine: compare candidate vs baseline LLM outputs, offline.",
     no_args_is_help=True,
+    pretty_exceptions_enable=False,
 )
 
 # Convention over configuration: `init` scaffolds exactly these filenames
@@ -32,12 +34,14 @@ _SCAFFOLD_CASE_KEY = "refund-policy"
 _SCAFFOLD_BASELINE = (
     f'{{"case_key": "{_SCAFFOLD_CASE_KEY}", '
     '"input": {"question": "What is your refund policy?"}, '
-    '"output": "We offer full refunds within 30 days of purchase."}\n'
+    '"output": "We offer full refunds within 30 days of purchase.", '
+    '"ground_truth": {"must_include": ["refund"]}}\n'
 )
 _SCAFFOLD_CANDIDATE = (
     f'{{"case_key": "{_SCAFFOLD_CASE_KEY}", '
     '"input": {"question": "What is your refund policy?"}, '
-    '"output": "Sorry, no refunds are offered on any purchase."}\n'
+    '"output": "Sorry, no refunds are offered on any purchase.", '
+    '"ground_truth": {"must_include": ["refund"]}}\n'
 )
 _SCAFFOLD_CRITERIA = (
     "# The model that judges your outputs. Any LiteLLM-supported model\n"
@@ -79,7 +83,7 @@ def version() -> None:
 @app.command()
 def init() -> None:
     """Scaffold baseline.jsonl, candidate.jsonl, criteria.yaml, and .env
-    in the current directory, pre-filled with a runnable example — edit
+    in the current directory, pre-filled with a runnable example - edit
     them in place, then run `evalitai compare` with no flags."""
     scaffold = {
         DEFAULT_BASELINE: _SCAFFOLD_BASELINE,
@@ -165,13 +169,17 @@ def compare(
         if baseline_judge is not None
         else None
     )
-    result = contract.compare(
-        baseline_cases,
-        candidate_cases,
-        criteria=criteria_obj,
-        config=config,
-        baseline_config=baseline_config,
-    )
+    try:
+        result = contract.compare(
+            baseline_cases,
+            candidate_cases,
+            criteria=criteria_obj,
+            config=config,
+            baseline_config=baseline_config,
+        )
+    except JudgeCallError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
     _emit(result, output)
 
 
@@ -203,7 +211,11 @@ def evaluate(
     candidate_cases = read_cases(candidate)
     criteria_obj = read_criteria(_resolve_criteria(criteria))
     config = EvaluatorConfig(judge=_resolve_judge(judge, criteria_obj))
-    result = contract.evaluate(candidate_cases, criteria=criteria_obj, config=config)
+    try:
+        result = contract.evaluate(candidate_cases, criteria=criteria_obj, config=config)
+    except JudgeCallError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
     _emit(result, output)
 
 

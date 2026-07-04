@@ -10,9 +10,23 @@ import time
 from dataclasses import dataclass
 
 import litellm
+from openai import OpenAIError
 
 from evalitai.core.models import EvaluatorConfig
 from evalitai.judge.prompts import SYSTEM_PROMPT
+
+# Silence LiteLLM's own "Give Feedback / Get Help" banner on errors - we
+# already surface a friendlier message via JudgeCallError.
+litellm.suppress_debug_info = True
+
+
+class JudgeCallError(RuntimeError):
+    """Raised when the configured judge model can't be reached or fails.
+
+    Wraps LiteLLM/provider SDK exceptions (missing/invalid API key, network
+    failure, rate limit, ...) so the CLI can show one friendly line instead
+    of the full provider stack trace.
+    """
 
 
 @dataclass(frozen=True)
@@ -24,16 +38,24 @@ class JudgeResponse:
 
 def call_judge(prompt: str, config: EvaluatorConfig) -> JudgeResponse:
     started = time.perf_counter()
-    response = litellm.completion(
-        model=config.judge,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=config.temperature,
-        seed=config.seed,
-        response_format={"type": "json_object"},
-    )
+    try:
+        response = litellm.completion(
+            model=config.judge,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=config.temperature,
+            seed=config.seed,
+            response_format={"type": "json_object"},
+        )
+    except OpenAIError as exc:
+        raise JudgeCallError(
+            f"Judge model '{config.judge}' call failed: {exc}\n"
+            "Check that the matching API key is set in .env (or your "
+            "environment), or run with --judge stub to test offline "
+            "without any LLM-judge metrics."
+        ) from exc
     latency_ms = (time.perf_counter() - started) * 1000
     content = response.choices[0].message.content or ""
 
